@@ -1,9 +1,13 @@
 `timescale 1ns/1ps
 
 module SPI_tb;
+    // Parameters
+    parameter CLK_DIV = 4;
+    parameter CPOL = 0;
+    parameter CPHA = 0;
 
-    reg clk = 0;
-    reg arst_n = 0;
+    reg clk;        // System clock
+    reg arst_n;     // Asynchronous active-low reset
 
     // Wires connecting Producer & Master
     wire start;
@@ -16,21 +20,23 @@ module SPI_tb;
     wire MISO;
     wire nCS;
 
-    // Master RX
+    // Master receiver interface wire
     wire [7:0] master_rx;
 
-    // Slave side
+    // Slave receiver interface wires
     wire [7:0] slave_rx;
     wire valid;
 
-    // Responder output 
+    // Responder shift register output feeding the slave transmission payload
     wire [7:0] responder_shift;
 
-    // Clock generation
+    // System clock generation
+    initial begin
+        clk = 0;
+    end
     always #5 clk = ~clk;
 
-
-    // Producer
+    // Producer Instantiation
     producer prod (
         .clk(clk),
         .arst_n(arst_n),
@@ -39,8 +45,12 @@ module SPI_tb;
         .tx_data(tx_data)
     );
 
-    // SPI Master
-    Master master (
+    // SPI Master controller Instantiation
+    Master #(
+        .CLK_DIV(CLK_DIV),
+        .CPOL(CPOL),
+        .CPHA(CPHA)
+    )  master(
         .clk(clk),
         .arst_n(arst_n),
         .tx_data(tx_data),
@@ -54,13 +64,16 @@ module SPI_tb;
         .MOSI(MOSI)
     );
 
-    // SPI Slave
-    Slave slave (
+    // SPI Slave peripheral Instantiation
+    Slave #(
+        .CPOL(CPOL),
+        .CPHA(CPHA)
+    )  slave(
         .clk(clk),
         .arst_n(arst_n),
-        .tx_data(8'hA5),   // slave transmit data
+        .tx_data(responder_shift),
         .rx_data(slave_rx),
-        .valid(valid),
+        .rx_valid(valid),
 
         .SCLK(SCLK),
         .nCS(nCS),
@@ -68,8 +81,11 @@ module SPI_tb;
         .MISO(MISO)
     );
 
-    // Responder
-    responder resp (
+    // Responder Instantiation
+    responder #(
+        .CPOL(CPOL),
+        .CPHA(CPHA)
+    )  resp( 
         .clk(clk),
         .arst_n(arst_n),
         .SCLK(SCLK),
@@ -79,25 +95,25 @@ module SPI_tb;
 
 
     initial begin
-        $dumpfile("waveform.vcd");
+        $dumpfile("spi.vcd");
         $dumpvars(0, SPI_tb);
 
-        // Reset
+        // Reset stimulus
         arst_n = 0;
         #50;
         arst_n = 1;
 
         // Run simulation
-        #200000;
+        #8000;
 
         $finish;
     end
 
 
     always @(posedge clk) begin
-        if (valid) begin
-            $display("T=%0t | Slave Received = %h | Master Sent = %h | SCLK = %b | MISO = %b | RX = %b",
-                     $time, slave_rx, tx_data, SCLK, MISO, slave_rx);
+        if (!nCS) begin
+            $strobe("T=%0t | nCS=%b SCLK=%b MOSI=%b MISO=%b | TX=%h RX=%h SHIFT=%h",
+                    $time, nCS, SCLK, MOSI, MISO, tx_data, master_rx, responder_shift);
         end
     end
 
