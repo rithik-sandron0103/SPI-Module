@@ -11,7 +11,7 @@ The SPI system is organized around synchronous control logic, edge detection, an
 - Edge-Based Data Transfer: Data shifting and sampling are aligned to leading and trailing edges, dynamically determined by `CPOL` and `CPHA`.
 - Full-Duplex Communication: Simultaneous transmission (`MOSI`) and reception (`MISO`) enable continuous bidirectional data exchange.
 - Finite State Machine (FSM): The master controller operates through structured states:
-<p align="center">`IDLE` -> `SETUP` -> `TRANSFER` -> `DONE`</p>
+<div align="center">`IDLE` -> `SETUP` -> `TRANSFER` -> `DONE`</div>
 - Clock Domain Crossing (CDC): Multi-stage synchronizers ensure safe sampling of asynchronous SPI inputs (`SCLK`, `MOSI`, `nCS`).
 
 ## Components
