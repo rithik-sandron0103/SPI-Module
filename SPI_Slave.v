@@ -65,11 +65,15 @@ module Slave #(
 
             // Transaction start
             if (nCS_falling) begin
-                tx_shift <= {tx_data[6:0] , 1'b0};  // Pre-shift transmit data register
                 rx_shift <= 8'h00;
                 bit_cnt <= 4'b0;
                 if (CPHA == 0) begin
-                    MISO <= tx_data[7];             // Drive MSB immediately for CPHA = 0
+                    MISO <= tx_data[7];                 // Drive MSB immediately for CPHA = 0
+                    tx_shift <= {tx_data[6:0] , 1'b0};  // Pre-shift transmit data register
+                end
+                else begin
+                    MISO <= 1'b0;
+                    tx_shift <= tx_data;
                 end
             end
 

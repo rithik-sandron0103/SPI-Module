@@ -82,10 +82,7 @@ module SPI_tb;
     );
 
     // Responder Instantiation
-    responder #(
-        .CPOL(CPOL),
-        .CPHA(CPHA)
-    )  resp( 
+    responder resp( 
         .clk(clk),
         .arst_n(arst_n),
         .SCLK(SCLK),
